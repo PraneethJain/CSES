@@ -3,58 +3,81 @@
 using namespace std;
 using ll = long long;
 
+template <typename T, typename F> struct SegTree
+{
+  ll n;
+  vector<T> t;
+  const T id;
+  F f;
+  SegTree(const vector<T> &a, T _id, F _f) : n(static_cast<ll>(a.size())), t(2 * n), id(_id), f(_f)
+  {
+    for (ll i = 0; i < n; i++)
+      t[n + i] = a[i];
+    for (ll i = n - 1; i >= 1; i--)
+      t[i] = f(t[2 * i], t[2 * i + 1]);
+  }
+
+  T query(ll l, ll r)
+  {
+    T resl(id), resr(id);
+    for (l += n, r += n; l <= r; l >>= 1, r >>= 1)
+    {
+      if (l == r)
+      {
+        resl = f(resl, t[l]);
+        break;
+      }
+      if (l & 1)
+        resl = f(resl, t[l++]);
+      if (!(r & 1))
+        resr = f(t[r--], resr);
+    }
+    return f(resl, resr);
+  }
+
+  void update(ll v, T value)
+  {
+    for (t[v += n] = value; v >>= 1;)
+      t[v] = f(t[2 * v], t[2 * v + 1]);
+  }
+};
+
 int main()
 {
   ios::sync_with_stdio(false);
   cin.tie(0);
   cout.tie(0);
 
-  int n{}, q{};
+  ll n{}, q{};
   cin >> n >> q;
   vector<ll> X(n);
-  for (int i{0}; i < n; ++i)
-    cin >> X[i];
+  for (auto &x : X)
+    cin >> x;
 
-  int blocksize{static_cast<int>(sqrt(n)) + 1};
-  vector<ll> blocks(blocksize, 0);
+  auto merge = [](const ll x, const ll y) { return x + y; };
+  vector<ll> zeroes(2 * n, 0);
+  SegTree<ll, decltype(merge)> seg(zeroes, 0, merge);
 
   while (q--)
   {
-    int t{};
+    ll t{};
     cin >> t;
     if (t == 1)
     {
-      int a{}, b{};
-      ll u{};
+      ll a{}, b{}, u{};
       cin >> a >> b >> u;
       --a;
       --b;
-      ll cur{a};
-      while (cur <= b)
-      {
-        if (cur + blocksize < b && cur % blocksize == 0)
-        {
-          int ok{static_cast<int>(cur / blocksize)};
-          while (cur + blocksize < b)
-          {
-            blocks[ok] += u;
-            ++ok;
-            cur += blocksize;
-          }
-        }
-        else
-        {
-          X[cur] += u;
-          ++cur;
-        }
-      }
+      ll temp{seg.query(b + 1, b + 1)};
+      seg.update(a, seg.query(a, a) + u);
+      seg.update(b + 1, temp - u);
     }
     else if (t == 2)
     {
-      int k{};
+      ll k{};
       cin >> k;
       --k;
-      cout << X[k] + blocks[k / blocksize] << '\n';
+      cout << X[k] + seg.query(0, k) << '\n';
     }
   }
 
