@@ -55,7 +55,7 @@ int main()
     cin >> x;
 
   auto merge = [](const ll x, const ll y) { return x + y; };
-  SegTree<ll, decltype(merge)> seg(vector<ll>(2 * n, 0), 0, merge);
+  SegTree<ll, decltype(merge)> seg(vector<ll>(n, 0), 0, merge);
 
   while (q--)
   {
@@ -69,7 +69,8 @@ int main()
       --b;
       ll temp{seg.query(b + 1, b + 1)};
       seg.update(a, seg.query(a, a) + u);
-      seg.update(b + 1, temp - u);
+      if (b != n - 1)
+        seg.update(b + 1, temp - u);
     }
     else if (t == 2)
     {
