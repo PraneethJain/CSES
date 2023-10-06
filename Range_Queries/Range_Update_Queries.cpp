@@ -55,8 +55,7 @@ int main()
     cin >> x;
 
   auto merge = [](const ll x, const ll y) { return x + y; };
-  vector<ll> zeroes(2 * n, 0);
-  SegTree<ll, decltype(merge)> seg(zeroes, 0, merge);
+  SegTree<ll, decltype(merge)> seg(vector<ll>(2 * n, 0), 0, merge);
 
   while (q--)
   {
