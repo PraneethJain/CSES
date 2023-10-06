@@ -3,68 +3,78 @@
 using namespace std;
 using ll = long long;
 
+template <typename T, typename F> struct SegTree
+{
+  ll n;
+  vector<T> t;
+  const T id;
+  F f;
+  SegTree(const vector<T> &a, T _id, F _f) : n(static_cast<ll>(a.size())), t(2 * n), id(_id), f(_f)
+  {
+    for (int i = 0; i < n; i++)
+      t[n + i] = a[i];
+    for (int i = n - 1; i >= 1; i--)
+      t[i] = f(t[2 * i], t[2 * i + 1]);
+  }
+
+  T query(ll l, ll r)
+  {
+    T resl(id), resr(id);
+    for (l += n, r += n; l <= r; l >>= 1, r >>= 1)
+    {
+      if (l == r)
+      {
+        resl = f(resl, t[l]);
+        break;
+      }
+      if (l & 1)
+        resl = f(resl, t[l++]);
+      if (!(r & 1))
+        resr = f(t[r--], resr);
+    }
+    return f(resl, resr);
+  }
+
+  void update(ll v, T value)
+  {
+    for (t[v += n] = value; v >>= 1;)
+      t[v] = f(t[2 * v], t[2 * v + 1]);
+  }
+};
+
 int main()
 {
   ios::sync_with_stdio(false);
   cin.tie(0);
 
-  int n{}, q{};
+  ll n{}, q{};
   cin >> n >> q;
   vector<ll> X(n);
-  for (int i{0}; i < n; ++i)
+  for (ll i{0}; i < n; ++i)
     cin >> X[i];
 
-  int blocksize{static_cast<int>(sqrt(n)) + 1};
-  vector<ll> blocks(n, 0);
-  for (int i{0}; i < n; ++i)
-    blocks[i / blocksize] += X[i];
+  auto merge = [](const ll x, const ll y) { return x + y; };
+  SegTree<ll, decltype(merge)> seg{X, 0, merge};
 
-  for (int i{0}; i < q; ++i)
+  for (ll i{0}; i < q; ++i)
   {
-    int t{};
+    ll t{};
     cin >> t;
     if (t == 1)
     {
-      int k{};
+      ll k{};
       ll u{};
       cin >> k >> u;
       --k;
-      blocks[k / blocksize] += u - X[k];
-      X[k] = u;
+      seg.update(k, u);
     }
     else if (t == 2)
     {
-      int a{}, b{};
+      ll a{}, b{};
       cin >> a >> b;
       --a;
       --b;
-      int cur{a};
-      ll res{0};
-      while (cur <= b)
-      {
-        if (cur + blocksize < b)
-        {
-          if (cur % blocksize == 0)
-          {
-            res += blocks[cur / blocksize];
-            cur += blocksize;
-          }
-          else
-          {
-            while (cur <= b && cur % blocksize != 0)
-            {
-              res += X[cur];
-              ++cur;
-            }
-          }
-        }
-        else
-        {
-          res += X[cur];
-          ++cur;
-        }
-      }
-      cout << res << '\n';
+      cout << seg.query(a, b) << '\n';
     }
   }
 
