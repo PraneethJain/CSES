@@ -35,10 +35,15 @@ template <typename T, typename F> struct SegTree
     return f(resl, resr);
   }
 
-  void update(ll v, T value)
+  void upset(ll v, T value)
   {
     for (t[v += n] = value; v >>= 1;)
       t[v] = f(t[2 * v], t[2 * v + 1]);
+  }
+
+  void update(ll v, T delta)
+  {
+    upset(v, query(v, v) + delta);
   }
 };
 
@@ -85,7 +90,7 @@ int main()
     else
     {
       cout << res + 1 << ' ';
-      seg.update(res, seg.query(res, res) - room);
+      seg.update(res, -room);
     }
   }
   cout << '\n';
