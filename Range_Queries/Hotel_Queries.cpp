@@ -43,7 +43,8 @@ template <typename T, typename F> struct SegTree
 
   void update(ll v, T delta)
   {
-    upset(v, query(v, v) + delta);
+    for (t[v += n] += delta; v >>= 1;)
+      t[v] = f(t[2 * v], t[2 * v + 1]);
   }
 };
 
