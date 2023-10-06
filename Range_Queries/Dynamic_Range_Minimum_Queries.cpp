@@ -3,60 +3,78 @@
 using namespace std;
 using ll = long long;
 
+template <typename T, typename F> struct SegTree
+{
+  ll n;
+  vector<T> t;
+  const T id;
+  F f;
+  SegTree(const vector<T> &a, T _id, F _f) : n(static_cast<ll>(a.size())), t(2 * n), id(_id), f(_f)
+  {
+    for (ll i = 0; i < n; i++)
+      t[n + i] = a[i];
+    for (ll i = n - 1; i >= 1; i--)
+      t[i] = f(t[2 * i], t[2 * i + 1]);
+  }
+
+  T query(ll l, ll r)
+  {
+    T resl(id), resr(id);
+    for (l += n, r += n; l <= r; l >>= 1, r >>= 1)
+    {
+      if (l == r)
+      {
+        resl = f(resl, t[l]);
+        break;
+      }
+      if (l & 1)
+        resl = f(resl, t[l++]);
+      if (!(r & 1))
+        resr = f(t[r--], resr);
+    }
+    return f(resl, resr);
+  }
+
+  void update(ll v, T value)
+  {
+    for (t[v += n] = value; v >>= 1;)
+      t[v] = f(t[2 * v], t[2 * v + 1]);
+  }
+};
+
 int main()
 {
   ios::sync_with_stdio(false);
   cin.tie(0);
 
-  int n{}, q{};
+  ll n{}, q{};
   cin >> n >> q;
   vector<ll> X(n);
-  for (int i{0}; i < n; ++i)
+  for (ll i{0}; i < n; ++i)
     cin >> X[i];
 
-  int blocksize{static_cast<int>(sqrt(n)) + 1};
-  vector<ll> blocks(n, numeric_limits<ll>::max());
-  for (int i{0}; i < n; ++i)
-    blocks[i / blocksize] = min(blocks[i / blocksize], X[i]);
+  auto merge = [](const ll x, const ll y) {return min(x, y);};
+  SegTree<ll, decltype(merge)> seg{X, numeric_limits<ll>::max(), merge};
 
-  for (int i{0}; i < q; ++i)
+  for (ll i{0}; i < q; ++i)
   {
-    int t{};
+    ll t{};
     cin >> t;
     if (t == 1)
     {
-      int k{};
+      ll k{};
       ll u{};
       cin >> k >> u;
       --k;
-      X[k] = u;
-      int blockidx = k / blocksize;
-      blocks[blockidx] = numeric_limits<ll>::max();
-      for (int j{blockidx * blocksize}; j < (blockidx + 1) * blocksize; ++j)
-        blocks[blockidx] = min(blocks[blockidx], X[j]);
+      seg.update(k, u);      
     }
     else if (t == 2)
     {
-      int a{}, b{};
+      ll a{}, b{};
       cin >> a >> b;
       --a;
       --b;
-      int cur{a};
-      ll res{numeric_limits<ll>::max()};
-      while (cur <= b)
-      {
-        if (cur + blocksize < b && cur % blocksize == 0)
-        {
-          res = min(res, blocks[cur / blocksize]);
-          cur += blocksize;
-        }
-        else
-        {
-          res = min(res, X[cur]);
-          ++cur;
-        }
-      }
-      cout << res << '\n';
+      cout << seg.query(a, b) << '\n';
     }
   }
 
